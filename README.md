@@ -25,8 +25,6 @@ MSGraphRequest module currently supports the following authentication flows:
 - Client credentials flow (ClientCertificate)
 - DeviceCode flow (DeviceCode) 
 
-
-
 # How to use the module
 Below follows a few examples of how the module can be used either on the command line or embedded within scripts. Before you start using the module, depending on how you intend to retrieve an access token, some parameter input is required. At minimum, the following variable should be available unless it's value is passed directory on the command line:
 
