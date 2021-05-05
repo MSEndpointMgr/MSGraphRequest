@@ -47,21 +47,15 @@ function Get-AccessToken {
     param(
         [parameter(Mandatory = $true, ParameterSetName = "Interactive", HelpMessage = "Specify the tenant name or ID, e.g. tenant.onmicrosoft.com or <GUID>.")]
         [parameter(Mandatory = $true, ParameterSetName = "ClientSecret")]
-<<<<<<< HEAD
         [parameter(Mandatory = $true, ParameterSetName = "ClientCertificate")]
-=======
         [parameter(Mandatory = $true, ParameterSetName = "DeviceCode")]
->>>>>>> 9fd96311041270c1de3905ec2a009a0995866204
         [ValidateNotNullOrEmpty()]
         [string]$TenantID,
         
         [parameter(Mandatory = $false, ParameterSetName = "Interactive", HelpMessage = "Application ID (Client ID) for an Azure AD service principal. Uses by default the 'Microsoft Intune PowerShell' service principal Application ID.")]
         [parameter(Mandatory = $true, ParameterSetName = "ClientSecret")]
-<<<<<<< HEAD
         [parameter(Mandatory = $true, ParameterSetName = "ClientCertificate")]
-=======
         [parameter(Mandatory = $false, ParameterSetName = "DeviceCode")]
->>>>>>> 9fd96311041270c1de3905ec2a009a0995866204
         [ValidateNotNullOrEmpty()]
         [string]$ClientID = "d1ddf0e4-d672-4dae-b554-9d5bdfd93547",
 
@@ -87,11 +81,8 @@ function Get-AccessToken {
 
         [parameter(Mandatory = $false, ParameterSetName = "Interactive", HelpMessage = "Specify to refresh an existing access token.")]
         [parameter(Mandatory = $false, ParameterSetName = "ClientSecret")]
-<<<<<<< HEAD
         [parameter(Mandatory = $false, ParameterSetName = "ClientCertificate")]
-=======
         [parameter(Mandatory = $false, ParameterSetName = "DeviceCode")]
->>>>>>> 9fd96311041270c1de3905ec2a009a0995866204
         [switch]$Refresh,
 
         [parameter(Mandatory = $false, ParameterSetName = "Interactive", HelpMessage = "Specify to clear existing access token from the local cache.")]
