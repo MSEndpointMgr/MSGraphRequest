@@ -23,6 +23,7 @@ MSGraphRequest module currently supports the following authentication flows:
 - Authorization code flow (Interactive)
 - Client credentials flow (ClientSecret)
 - Client credentials flow (ClientCertificate)
+- DeviceCode flow (DeviceCode) 
 
 
 
