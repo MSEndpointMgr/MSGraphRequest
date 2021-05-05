@@ -13,7 +13,10 @@ function Get-AccessToken {
         Application ID (Client ID) for an Azure AD service principal. Uses by default the 'Microsoft Intune PowerShell' service principal Application ID.
 
     .PARAMETER ClientSecret
-        Specify the client secret for an Azure AD service principal.        
+        Specify the client secret for an Azure AD service principal.
+
+    .PARAMETER ClientCertificate
+        Specify the client certificate.
 
     .PARAMETER RedirectUri
         Specify the Redirect URI (also known as Reply URL) of the custom Azure AD service principal.
@@ -40,17 +43,23 @@ function Get-AccessToken {
     param(
         [parameter(Mandatory = $true, ParameterSetName = "Interactive", HelpMessage = "Specify the tenant name or ID, e.g. tenant.onmicrosoft.com or <GUID>.")]
         [parameter(Mandatory = $true, ParameterSetName = "ClientSecret")]
+        [parameter(Mandatory = $true, ParameterSetName = "ClientCertificate")]
         [ValidateNotNullOrEmpty()]
         [string]$TenantID,
         
         [parameter(Mandatory = $false, ParameterSetName = "Interactive", HelpMessage = "Application ID (Client ID) for an Azure AD service principal. Uses by default the 'Microsoft Intune PowerShell' service principal Application ID.")]
         [parameter(Mandatory = $true, ParameterSetName = "ClientSecret")]
+        [parameter(Mandatory = $true, ParameterSetName = "ClientCertificate")]
         [ValidateNotNullOrEmpty()]
         [string]$ClientID = "d1ddf0e4-d672-4dae-b554-9d5bdfd93547",
 
         [parameter(Mandatory = $false, ParameterSetName = "ClientSecret", HelpMessage = "Specify the client secret for an Azure AD service principal.")]
         [ValidateNotNullOrEmpty()]
         [string]$ClientSecret,
+
+        [parameter(Mandatory = $true, ParameterSetName = "ClientCertificate", HelpMessage = "Specify the client certificate.")]
+        [ValidateNotNullOrEmpty()]
+        [System.Security.Cryptography.X509Certificates.X509Certificate2]$ClientCertificate,
 
         [parameter(Mandatory = $false, ParameterSetName = "Interactive", HelpMessage = "Specify the Redirect URI (also known as Reply URL) of the custom Azure AD service principal.")]
         [parameter(Mandatory = $false, ParameterSetName = "ClientSecret")]
@@ -62,6 +71,7 @@ function Get-AccessToken {
 
         [parameter(Mandatory = $false, ParameterSetName = "Interactive", HelpMessage = "Specify to refresh an existing access token.")]
         [parameter(Mandatory = $false, ParameterSetName = "ClientSecret")]
+        [parameter(Mandatory = $false, ParameterSetName = "ClientCertificate")]
         [switch]$Refresh,
 
         [parameter(Mandatory = $false, ParameterSetName = "Interactive", HelpMessage = "Specify to clear existing access token from the local cache.")]
@@ -130,6 +140,11 @@ function Get-AccessToken {
                         $AccessTokenArguments.Add("ForceRefresh", $true)
                     }
                 }
+                "ClientCertificate" {
+                    if ($PSBoundParameters["Refresh"]) {
+                        $AccessTokenArguments.Add("ForceRefresh", $true)
+                    }
+                }
             }
 
             # Dynamically add parameter input for Get-MsalToken based on command line input
@@ -139,8 +154,9 @@ function Get-AccessToken {
             if ($PSBoundParameters["ClientSecret"]) {
                 $AccessTokenArguments.Add("ClientSecret", $ClientSecretSecure)
             }
-
-            $AccessTokenArguments
+            if ($PSBoundParameters["ClientCertificate"]) {
+                $AccessTokenArguments.Add("ClientCertificate", $ClientCertificate)
+            }
 
             try {
                 # Attempt to retrieve or refresh an access token

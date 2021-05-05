@@ -25,9 +25,6 @@ function Invoke-MSGraphOperation {
     .PARAMETER Resource
         Specify the full resource path, e.g. deviceManagement/auditEvents.
         
-    .PARAMETER Headers
-        Specify a hash-table as the header containing minimum the authentication token.
-        
     .PARAMETER Body
         Specify the body construct.
         
@@ -41,7 +38,7 @@ function Invoke-MSGraphOperation {
         Author:      Nickolaj Andersen & Jan Ketil Skanke
         Contact:     @JankeSkanke @NickolajA
         Created:     2020-10-11
-        Updated:     2020-11-11
+        Updated:     2021-04-12
 
         Version history:
         1.0.0 - (2020-10-11) Function created

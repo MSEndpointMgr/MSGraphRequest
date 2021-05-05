@@ -27,7 +27,11 @@ MSGraphRequest module currently supports the following authentication flows:
 
 
 # How to use the module
-Below follows a few examples of how the module can be used either on the command line or embedded within scripts.
+Below follows a few examples of how the module can be used either on the command line or embedded within scripts. Before you start using the module, depending on how you intend to retrieve an access token, some parameter input is required. At minimum, the following variable should be available unless it's value is passed directory on the command line:
+
+```PowerShell
+$TenantID = "tenant.onmicrosoft.com"
+```
 
 ## Get an access token
 The Get-AccessToken function performs two main operations. The first is to call Get-MsalToken to retrieve an access token. Additionally, it will also call the private function in this module named New-AuthenticationHeader to return a usage hash-table that's automatically referenced when using the Invoke-MSGraphOperation function.
