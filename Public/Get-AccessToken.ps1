@@ -21,6 +21,9 @@ function Get-AccessToken {
     .PARAMETER RedirectUri
         Specify the Redirect URI (also known as Reply URL) of the custom Azure AD service principal.
 
+    .PARAMETER DeviceCode
+        Specify delegated login using devicecode flow, you will be prompted to navigate to https://microsoft.com/devicelogin
+
     .PARAMETER Interactive
         Specify to force an interactive prompt for credentials.
 
@@ -31,25 +34,34 @@ function Get-AccessToken {
         Specify to clear existing access token from the local cache.
 
     .NOTES
-        Author:      Nickolaj Andersen
-        Contact:     @NickolajA
+        Author:      Nickolaj Andersen & Jan Ketil Skanke
+        Contact:     @NickolajA @JankeSkanke
         Created:     2021-04-08
-        Updated:     2021-04-08
+        Updated:     2021-05-05
 
         Version history:
         1.0.0 - (2021-04-08) Script created
+        1.0.1 - (2021-05-05) Added delegated login using devicecode flow
     #>
     [CmdletBinding(DefaultParameterSetName = "Interactive")]
     param(
         [parameter(Mandatory = $true, ParameterSetName = "Interactive", HelpMessage = "Specify the tenant name or ID, e.g. tenant.onmicrosoft.com or <GUID>.")]
         [parameter(Mandatory = $true, ParameterSetName = "ClientSecret")]
+<<<<<<< HEAD
         [parameter(Mandatory = $true, ParameterSetName = "ClientCertificate")]
+=======
+        [parameter(Mandatory = $true, ParameterSetName = "DeviceCode")]
+>>>>>>> 9fd96311041270c1de3905ec2a009a0995866204
         [ValidateNotNullOrEmpty()]
         [string]$TenantID,
         
         [parameter(Mandatory = $false, ParameterSetName = "Interactive", HelpMessage = "Application ID (Client ID) for an Azure AD service principal. Uses by default the 'Microsoft Intune PowerShell' service principal Application ID.")]
         [parameter(Mandatory = $true, ParameterSetName = "ClientSecret")]
+<<<<<<< HEAD
         [parameter(Mandatory = $true, ParameterSetName = "ClientCertificate")]
+=======
+        [parameter(Mandatory = $false, ParameterSetName = "DeviceCode")]
+>>>>>>> 9fd96311041270c1de3905ec2a009a0995866204
         [ValidateNotNullOrEmpty()]
         [string]$ClientID = "d1ddf0e4-d672-4dae-b554-9d5bdfd93547",
 
@@ -63,19 +75,28 @@ function Get-AccessToken {
 
         [parameter(Mandatory = $false, ParameterSetName = "Interactive", HelpMessage = "Specify the Redirect URI (also known as Reply URL) of the custom Azure AD service principal.")]
         [parameter(Mandatory = $false, ParameterSetName = "ClientSecret")]
+        [parameter(Mandatory = $false, ParameterSetName = "DeviceCode")]
         [ValidateNotNullOrEmpty()]
         [string]$RedirectUri = [string]::Empty,
 
         [parameter(Mandatory = $false, ParameterSetName = "Interactive", HelpMessage = "Specify to force an interactive prompt for credentials.")]
         [switch]$Interactive,
 
+        [parameter(Mandatory = $true, ParameterSetName = "DeviceCode", HelpMessage = "Specify to do delegated login using devicecode flow, you will be prompted to navigate to https://microsoft.com/devicelogin")]
+        [switch]$DeviceCode,
+
         [parameter(Mandatory = $false, ParameterSetName = "Interactive", HelpMessage = "Specify to refresh an existing access token.")]
         [parameter(Mandatory = $false, ParameterSetName = "ClientSecret")]
+<<<<<<< HEAD
         [parameter(Mandatory = $false, ParameterSetName = "ClientCertificate")]
+=======
+        [parameter(Mandatory = $false, ParameterSetName = "DeviceCode")]
+>>>>>>> 9fd96311041270c1de3905ec2a009a0995866204
         [switch]$Refresh,
 
         [parameter(Mandatory = $false, ParameterSetName = "Interactive", HelpMessage = "Specify to clear existing access token from the local cache.")]
         [parameter(Mandatory = $false, ParameterSetName = "ClientSecret")]
+        [parameter(Mandatory = $false, ParameterSetName = "DeviceCode")]
         [switch]$ClearCache
     )
     Begin {
@@ -116,7 +137,7 @@ function Get-AccessToken {
         # Clear existing access token from local cache
         if ($PSBoundParameters["ClearCache"]) {
             Clear-MsalTokenCache
-        }
+            }
 
         try {
             # Construct table with common parameter input for Get-MsalToken cmdlet
@@ -127,12 +148,17 @@ function Get-AccessToken {
                 "ErrorAction" = "Stop"
             }
 
-            # Dynamically add parameter input for Get-MsalToken based parameter set name
+            # Dynamically add parameter input for Get-MsalToken based on parameter set name
             switch ($PSCmdlet.ParameterSetName) {
                 "Interactive" {
                     if ($PSBoundParameters["Refresh"]) {
                         $AccessTokenArguments.Add("ForceRefresh", $true)
                         $AccessTokenArguments.Add("Silent", $true)
+                    }
+                }
+                "DeviceCode" {
+                    if ($PSBoundParameters["Refresh"]) {
+                        $AccessTokenArguments.Add("ForceRefresh", $true)
                     }
                 }
                 "ClientSecret" {
@@ -150,6 +176,11 @@ function Get-AccessToken {
             # Dynamically add parameter input for Get-MsalToken based on command line input
             if ($PSBoundParameters["Interactive"]) {
                 $AccessTokenArguments.Add("Interactive", $true)
+            }
+            if ($PSBoundParameters["DeviceCode"]) {
+                if (-not($PSBoundParameters["Refresh"])){
+                    $AccessTokenArguments.Add("DeviceCode", $true)
+                }
             }
             if ($PSBoundParameters["ClientSecret"]) {
                 $AccessTokenArguments.Add("ClientSecret", $ClientSecretSecure)
