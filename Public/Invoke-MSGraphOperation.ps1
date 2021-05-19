@@ -166,41 +166,50 @@ function Invoke-MSGraphOperation {
                 $StreamReader.DiscardBufferedData()
                 $ResponseBody = ($StreamReader.ReadToEnd() | ConvertFrom-Json)
 
-                if ($ExceptionItem.Exception.Response.StatusCode -like "429") {
-                    # Detected throttling based from response status code
-                    $RetryInSeconds = $ExceptionItem.Exception.Response.Headers["Retry-After"]
+                switch ($ExceptionItem.Exception.Response.StatusCode) {
+                    "TooManyRequests" {
+                        # Detected throttling based from response status code
+                        $RetryInSeconds = $ExceptionItem.Exception.Response.Headers["Retry-After"]
 
-                    if ($RetryInSeconds -ne $null) {
-                        # Wait for given period of time specified in response headers
-                        Write-Verbose -Message "Graph is throttling the request, will retry in '$($RetryInSeconds)' seconds"
-                        Start-Sleep -Seconds $RetryInSeconds
-                    }
-                    else {
-                        Write-Verbose -Message "Graph is throttling the request, will retry in default '300' seconds"
-                        Start-Sleep -Seconds 300
-                    }
-                }
-                else {
-                    switch ($PSCmdlet.ParameterSetName) {
-                        "GET" {
-                            # Output warning message that the request failed with error message description from response stream
-                            Write-Warning -Message "Graph request failed with status code '$($ExceptionItem.Exception.Response.StatusCode)'. Error message: $($ResponseBody.error.message)"
-
-                            # Set graph response as handled and stop processing loop
-                            $GraphResponseProcess = $false
+                        if ($RetryInSeconds -ne $null) {
+                            # Wait for given period of time specified in response headers
+                            Write-Warning -Message "Graph is throttling the request, will retry in '$($RetryInSeconds)' seconds"
+                            Start-Sleep -Seconds $RetryInSeconds
                         }
-                        default {
-                            # Construct new custom error record
-                            $SystemException = New-Object -TypeName "System.Management.Automation.RuntimeException" -ArgumentList ("{0}: {1}" -f $ResponseBody.error.code, $ResponseBody.error.message)
-                            $ErrorRecord = New-Object -TypeName "System.Management.Automation.ErrorRecord" -ArgumentList @($SystemException, $ErrorID, [System.Management.Automation.ErrorCategory]::NotImplemented, [string]::Empty)
-
-                            # Throw a terminating custom error record
-                            $PSCmdlet.ThrowTerminatingError($ErrorRecord)
+                        else {
+                            Write-Warning -Message "Graph is throttling the request, will retry in default '300' seconds"
+                            Start-Sleep -Seconds 300
                         }
                     }
+                    "GatewayTimeout" {
+                        Write-Warning -Message "Graph returned Gateway Timeout for the request, will retry in default '60' seconds"
+                        Start-Sleep -Seconds 60
+                    }
+                    default {
+                        # Convert status code to integer for output
+                        $HttpStatusCodeInteger = ([int][System.Net.HttpStatusCode]$ExceptionItem.Exception.Response.StatusCode)
 
-                    # Set graph response as handled and stop processing loop
-                    $GraphResponseProcess = $false
+                        switch ($PSCmdlet.ParameterSetName) {
+                            "GET" {
+                                # Output warning message that the request failed with error message description from response stream
+                                Write-Warning -Message "Graph request failed with status code '$($HttpStatusCodeInteger) ($($ExceptionItem.Exception.Response.StatusCode))'. Error message: $($ResponseBody.error.message)"
+    
+                                # Set graph response as handled and stop processing loop
+                                $GraphResponseProcess = $false
+                            }
+                            default {
+                                # Construct new custom error record
+                                $SystemException = New-Object -TypeName "System.Management.Automation.RuntimeException" -ArgumentList ("{0}: {1}" -f $ResponseBody.error.code, $ResponseBody.error.message)
+                                $ErrorRecord = New-Object -TypeName "System.Management.Automation.ErrorRecord" -ArgumentList @($SystemException, $ErrorID, [System.Management.Automation.ErrorCategory]::NotImplemented, [string]::Empty)
+    
+                                # Throw a terminating custom error record
+                                $PSCmdlet.ThrowTerminatingError($ErrorRecord)
+                            }
+                        }
+    
+                        # Set graph response as handled and stop processing loop
+                        $GraphResponseProcess = $false
+                    }
                 }
             }
         }
