@@ -149,7 +149,7 @@ function Invoke-MSGraphOperation {
                         $GraphResponseList.AddRange($GraphResponse.value) | Out-Null
                     }
                     else {
-                        $GraphResponseList.Add($GraphResponse) | Out-Null
+                        $GraphResponseList.AddRange($GraphResponse) | Out-Null
                     }
                     
                     # Set graph response as handled and stop processing loop
