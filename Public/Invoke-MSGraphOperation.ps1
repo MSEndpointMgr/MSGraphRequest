@@ -38,12 +38,13 @@ function Invoke-MSGraphOperation {
         Author:      Nickolaj Andersen & Jan Ketil Skanke
         Contact:     @JankeSkanke @NickolajA
         Created:     2020-10-11
-        Updated:     2021-04-12
+        Updated:     2021-08-19
 
         Version history:
         1.0.0 - (2020-10-11) Function created
         1.0.1 - (2020-11-11) Tested and verified for rate-limit and nextLink
         1.0.2 - (2021-04-12) Adjusted for usage in MSGraphRequest module
+        1.0.3 - (2021-08-19) Fixed bug to handle single result
     #>    
     param(
         [parameter(Mandatory = $true, ParameterSetName = "GET", HelpMessage = "Switch parameter used to specify the method operation as 'GET'.")]
@@ -137,6 +138,7 @@ function Invoke-MSGraphOperation {
                 # Invoke Graph request
                 $GraphResponse = Invoke-RestMethod @RequestParams
 
+
                 # Handle paging in response
                 if ($GraphResponse.'@odata.nextLink' -ne $null) {
                     $GraphResponseList.AddRange($GraphResponse.value) | Out-Null
@@ -145,16 +147,17 @@ function Invoke-MSGraphOperation {
                 }
                 else {
                     # NextLink from response was null, assuming last page but also handle if a single instance is returned
-                    if (-not([string]::IsNullOrEmpty($GraphResponse.value))) {
+                    if ($GraphResponse.value) {
                         $GraphResponseList.AddRange($GraphResponse.value) | Out-Null
                     }
                     else {
-                        $GraphResponseList.AddRange($GraphResponse) | Out-Null
+                        $GraphResponseList.Add($GraphResponse) | Out-Null
                     }
                     
                     # Set graph response as handled and stop processing loop
                     $GraphResponseProcess = $false
                 }
+
             }
             catch [System.Exception] {
                 # Capture current error
