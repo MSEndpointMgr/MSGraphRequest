@@ -44,6 +44,7 @@ function Invoke-MSGraphOperation {
         1.0.0 - (2020-10-11) Function created
         1.0.1 - (2020-11-11) Tested and verified for rate-limit and nextLink
         1.0.2 - (2021-04-12) Adjusted for usage in MSGraphRequest module
+        1.0.3 - (2021-08-19) Fixed bug of handle single value result and exclude paging loop from other method then GET
     #>    
     param(
         [parameter(Mandatory = $true, ParameterSetName = "GET", HelpMessage = "Switch parameter used to specify the method operation as 'GET'.")]
@@ -137,21 +138,29 @@ function Invoke-MSGraphOperation {
                 # Invoke Graph request
                 $GraphResponse = Invoke-RestMethod @RequestParams
 
-                # Handle paging in response
-                if ($GraphResponse.'@odata.nextLink' -ne $null) {
-                    $GraphResponseList.AddRange($GraphResponse.value) | Out-Null
-                    $GraphURI = $GraphResponse.'@odata.nextLink'
-                    Write-Verbose -Message "NextLink: $($GraphURI)"
-                }
-                else {
-                    # NextLink from response was null, assuming last page but also handle if a single instance is returned
-                    if (-not([string]::IsNullOrEmpty($GraphResponse.value))) {
+                if ($PSCmdlet.ParameterSetName -like "GET") {
+                    # Handle paging in response
+                    if ($GraphResponse.'@odata.nextLink' -ne $null) {
                         $GraphResponseList.AddRange($GraphResponse.value) | Out-Null
+                        $GraphURI = $GraphResponse.'@odata.nextLink'
+                        Write-Verbose -Message "NextLink: $($GraphURI)"
                     }
                     else {
-                        $GraphResponseList.AddRange($GraphResponse) | Out-Null
-                    }
+                        # NextLink from response was null, assuming last page but also handle if a single instance is returned
+                        if (-not([string]::IsNullOrEmpty($GraphResponse.value))) {
+                            $GraphResponseList.AddRange($GraphResponse.value) | Out-Null
+                        }
+                        else {
+                            $GraphResponseList.AddRange($GraphResponse) | Out-Null
+                        }
                     
+                        # Set graph response as handled and stop processing loop
+                        $GraphResponseProcess = $false
+                    }
+                }
+                else {
+                    $GraphResponseList.Add($GraphResponse) | Out-Null
+
                     # Set graph response as handled and stop processing loop
                     $GraphResponseProcess = $false
                 }
