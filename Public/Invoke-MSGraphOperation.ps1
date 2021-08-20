@@ -138,7 +138,6 @@ function Invoke-MSGraphOperation {
                 # Invoke Graph request
                 $GraphResponse = Invoke-RestMethod @RequestParams
 
-
                 # Handle paging in response
                 if ($GraphResponse.'@odata.nextLink' -ne $null) {
                     $GraphResponseList.AddRange($GraphResponse.value) | Out-Null
