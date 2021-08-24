@@ -15,8 +15,15 @@ function Show-AuthenticationInfo {
         Version history:
         1.0.0 - (2021-08-24) Script created
     #>
-$ActiveTenant = "Connected to tenant: $($Global:AccessToken.TenantID)"
+
 $ActiveHeader = $Global:AuthenticationHeader
 
-return $ActiveTenant, $ActiveHeader
+$Response = New-Object PSObject
+foreach ($item in $ActiveHeader.keys) { 
+    $Response | Add-Member -Type NoteProperty -Name $item -Value  $ActiveHeader[$item]   
 }
+$Response | Add-Member -Type NoteProperty -Name "TenantID" -Value $Global:AccessToken.TenantID
+$Response | Add-Member -Type NoteProperty -Name "Scopes" -Value $Global:AccessToken.Scopes
+return $Response
+}
+
