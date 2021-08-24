@@ -18,7 +18,7 @@ function Show-AuthenticationInfo {
 
 $ActiveHeader = $Global:AuthenticationHeader
 
-$Response = New-Object PSObject
+$Response = New-Object -TypeName PSObject 
 foreach ($item in $ActiveHeader.keys) { 
     $Response | Add-Member -Type NoteProperty -Name $item -Value  $ActiveHeader[$item]   
 }
