@@ -55,3 +55,11 @@ The Invoke-MSGraphOperation performs all requests towards MS Graph API. It suppo
 Invoke-MSGraphOperation -Get -Resource /devices -APIVersion Beta
 ```
 
+## Additional Headers 
+For some graph operations you might need to add additional headers to your excisting authentication header. The Add-AuthenticationHeaderItem makes this simple. 
+
+```PowerShell
+Add-AuthenticationHeaderItem -Name consistencylevel -Value eventual
+Add-AuthenticationHeaderItem -Name ocp-client-name -Value "My Client"
+Add-AuthenticationHeaderItem -Name ocp-client-version -Value "1.2"
+``` 
