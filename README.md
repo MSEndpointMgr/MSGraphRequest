@@ -34,3 +34,16 @@ $TenantID = "tenant.onmicrosoft.com"
 
 ## Get an access token
 The Get-AccessToken function performs two main operations. The first is to call Get-MsalToken to retrieve an access token. Additionally, it will also call the private function in this module named New-AuthenticationHeader to return a usable hash-table that's automatically referenced when using the Invoke-MSGraphOperation function.
+
+### Device Code
+```PowerShell
+Get-AccessToken -DeviceCode -TenantID $TenantID
+```
+### Interactive 
+```PowerShell
+Get-AccessToken -TenantID $TenantID
+```
+### ClientSecret 
+```PowerShell
+Get-AccessToken -TenantID -ClientID <AzureAD AppID> -ClientSecret <ClientSecret> 
+```
