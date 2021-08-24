@@ -35,15 +35,23 @@ $TenantID = "tenant.onmicrosoft.com"
 ## Get an access token
 The Get-AccessToken function performs two main operations. The first is to call Get-MsalToken to retrieve an access token. Additionally, it will also call the private function in this module named New-AuthenticationHeader to return a usable hash-table that's automatically referenced when using the Invoke-MSGraphOperation function.
 
-### Device Code
+- Device Code
 ```PowerShell
 Get-AccessToken -DeviceCode -TenantID $TenantID
 ```
-### Interactive 
+- Interactive 
 ```PowerShell
 Get-AccessToken -TenantID $TenantID
 ```
-### ClientSecret 
+- ClientSecret 
 ```PowerShell
 Get-AccessToken -TenantID -ClientID <AzureAD AppID> -ClientSecret <ClientSecret> 
 ```
+
+## MS Graph Api Requests
+The Invoke-MSGraphOperation performs all requests towards MS Graph API. It support all the following GET, POST, PATCH, PUT, DELETE with automated handling of MS Graph throttling or paging on large GET operations. Simple Get requests in the example below: 
+
+```PowerShell
+Invoke-MSGraphOperation -Get -Resource /devices -APIVersion Beta
+```
+
