@@ -37,7 +37,7 @@ The Get-AccessToken function performs two main operations. The first is to call 
 
 - Device Code
 ```PowerShell
-Get-AccessToken -DeviceCode -TenantID $TenantID
+Get-AccessToken -TenantID $TenantID -DeviceCode
 ```
 - Interactive 
 ```PowerShell
@@ -45,21 +45,21 @@ Get-AccessToken -TenantID $TenantID
 ```
 - ClientSecret 
 ```PowerShell
-Get-AccessToken -TenantID -ClientID <AzureAD AppID> -ClientSecret <ClientSecret> 
+Get-AccessToken -TenantID $TenantID -ClientID "<AzureAD AppID>" -ClientSecret "<ClientSecret>"
 ```
 
 ## MS Graph Api Requests
 The Invoke-MSGraphOperation performs all requests towards MS Graph API. It support all the following GET, POST, PATCH, PUT, DELETE with automated handling of MS Graph throttling or paging on large GET operations. Simple Get requests in the example below: 
 
 ```PowerShell
-Invoke-MSGraphOperation -Get -Resource /devices -APIVersion Beta
+Invoke-MSGraphOperation -Get -Resource "devices" -APIVersion "Beta"
 ```
 
 ## Additional Headers 
 For some graph operations you might need to add additional headers to your excisting authentication header. The Add-AuthenticationHeaderItem makes this simple. 
 
 ```PowerShell
-Add-AuthenticationHeaderItem -Name consistencylevel -Value eventual
-Add-AuthenticationHeaderItem -Name ocp-client-name -Value "My Client"
-Add-AuthenticationHeaderItem -Name ocp-client-version -Value "1.2"
+Add-AuthenticationHeaderItem -Name "consistencylevel" -Value "eventual"
+Add-AuthenticationHeaderItem -Name "ocp-client-name" -Value "My Client"
+Add-AuthenticationHeaderItem -Name "ocp-client-version" -Value "1.2"
 ``` 
