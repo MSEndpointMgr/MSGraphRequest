@@ -19,7 +19,7 @@ function Remove-AuthenticationHeaderItem {
         1.0.0 - (2021-08-24) Script created
     #>
     param(
-        [parameter(Mandatory = $true, HelpMessage = "Specify the name, or the 'key' of the item to be added to the authentication header hash-table.")]
+        [parameter(Mandatory = $true, HelpMessage = "Specify the name, or the 'key' of the item to be removed from the authentication header hash-table.")]
         [ValidateNotNullOrEmpty()]
         [string]$Name
     )
