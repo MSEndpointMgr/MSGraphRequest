@@ -148,7 +148,8 @@ function Invoke-MSGraphOperation {
                     # NextLink from response was null, assuming last page but also handle if a single instance is returned
                     if ($GraphResponse.value) {
                         $GraphResponseList.AddRange($GraphResponse.value) | Out-Null
-                    }elseif ($GraphResponse.'@odata.count' -eq 0)  {
+                    }
+                    elseif ($GraphResponse.'@odata.count' -eq 0)  {
                         #do nothing to return empty
                     }
                     else {
