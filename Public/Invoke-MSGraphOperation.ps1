@@ -38,13 +38,15 @@ function Invoke-MSGraphOperation {
         Author:      Nickolaj Andersen & Jan Ketil Skanke
         Contact:     @JankeSkanke @NickolajA
         Created:     2020-10-11
-        Updated:     2021-08-19
+        Updated:     2021-09-08
 
         Version history:
         1.0.0 - (2020-10-11) Function created
         1.0.1 - (2020-11-11) Tested and verified for rate-limit and nextLink
         1.0.2 - (2021-04-12) Adjusted for usage in MSGraphRequest module
         1.0.3 - (2021-08-19) Fixed bug to handle single result
+        1.0.4 - (2021-09-08) Added cross platform support for error details and fixed an error where StreamReader was used but not supported on newer PS versions.
+                             Fixed bug to handle empty results when using GET operation.
     #>    
     param(
         [parameter(Mandatory = $true, ParameterSetName = "GET", HelpMessage = "Switch parameter used to specify the method operation as 'GET'.")]
@@ -150,25 +152,47 @@ function Invoke-MSGraphOperation {
                         $GraphResponseList.AddRange($GraphResponse.value) | Out-Null
                     }
                     elseif ($GraphResponse.'@odata.count' -eq 0)  {
-                        #do nothing to return empty
+                        # Do nothing to return empty
                     }
                     else {
                         $GraphResponseList.Add($GraphResponse) | Out-Null
                     }
+
                     # Set graph response as handled and stop processing loop
                     $GraphResponseProcess = $false
                 }
-
             }
             catch [System.Exception] {
                 # Capture current error
                 $ExceptionItem = $PSItem
 
-                # Read the response stream
-                $StreamReader = New-Object -TypeName "System.IO.StreamReader" -ArgumentList @($ExceptionItem.Exception.Response.GetResponseStream())
-                $StreamReader.BaseStream.Position = 0
-                $StreamReader.DiscardBufferedData()
-                $ResponseBody = ($StreamReader.ReadToEnd() | ConvertFrom-Json)
+                # Construct response error custom object for cross platform support
+                $ResponseBody = [PSCustomObject]@{
+                    "ErrorMessage" = [string]::Empty
+                    "ErrorCode" = [string]::Empty
+                }
+
+                # Read response error details differently depending PSVersion
+                switch -Wildcard ($PSVersionTable.PSVersion) {
+                    "5*" {
+                        # Read the response stream
+                        $StreamReader = New-Object -TypeName "System.IO.StreamReader" -ArgumentList @($ExceptionItem.Exception.Response.GetResponseStream())
+                        $StreamReader.BaseStream.Position = 0
+                        $StreamReader.DiscardBufferedData()
+                        $ResponseReader = ($StreamReader.ReadToEnd() | ConvertFrom-Json)
+
+                        # Set response error details
+                        $ResponseBody.ErrorMessage = $ResponseReader.error.message
+                        $ResponseBody.ErrorCode = $ResponseReader.error.code
+                    }
+                    default {
+                        $ErrorDetails = $ExceptionItem.ErrorDetails.Message | ConvertFrom-Json
+
+                        # Set response error details
+                        $ResponseBody.ErrorMessage = $ErrorDetails.error.message
+                        $ResponseBody.ErrorCode = $ErrorDetails.error.code
+                    }
+                }              
 
                 switch ($ExceptionItem.Exception.Response.StatusCode) {
                     "TooManyRequests" {
@@ -196,14 +220,14 @@ function Invoke-MSGraphOperation {
                         switch ($PSCmdlet.ParameterSetName) {
                             "GET" {
                                 # Output warning message that the request failed with error message description from response stream
-                                Write-Warning -Message "Graph request failed with status code '$($HttpStatusCodeInteger) ($($ExceptionItem.Exception.Response.StatusCode))'. Error message: $($ResponseBody.error.message)"
+                                Write-Warning -Message "Graph request failed with status code '$($HttpStatusCodeInteger) ($($ExceptionItem.Exception.Response.StatusCode))'. Error details: $($ResponseBody.ErrorCode) - $($ResponseBody.ErrorMessage)"
     
                                 # Set graph response as handled and stop processing loop
                                 $GraphResponseProcess = $false
                             }
                             default {
                                 # Construct new custom error record
-                                $SystemException = New-Object -TypeName "System.Management.Automation.RuntimeException" -ArgumentList ("{0}: {1}" -f $ResponseBody.error.code, $ResponseBody.error.message)
+                                $SystemException = New-Object -TypeName "System.Management.Automation.RuntimeException" -ArgumentList ("{0}: {1}" -f $ResponseBody.ErrorCode, $ResponseBody.ErrorMessage)
                                 $ErrorRecord = New-Object -TypeName "System.Management.Automation.ErrorRecord" -ArgumentList @($SystemException, $ErrorID, [System.Management.Automation.ErrorCategory]::NotImplemented, [string]::Empty)
     
                                 # Throw a terminating custom error record
