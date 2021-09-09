@@ -173,8 +173,8 @@ function Invoke-MSGraphOperation {
                 }
 
                 # Read response error details differently depending PSVersion
-                switch -Wildcard ($PSVersionTable.PSVersion) {
-                    "5*" {
+                switch ($PSVersionTable.PSVersion.Major) {
+                    "5" {
                         # Read the response stream
                         $StreamReader = New-Object -TypeName "System.IO.StreamReader" -ArgumentList @($ExceptionItem.Exception.Response.GetResponseStream())
                         $StreamReader.BaseStream.Position = 0
