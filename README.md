@@ -11,7 +11,7 @@ Currently the following functions are supported in the module:
 ## Installing the module from PSGallery
 The MSGraphRequest module is published to the PowerShell Gallery. Install it on your system by running the following in an elevated PowerShell console:
 ```PowerShell
-Install-Module -Name "MSGraphRequest"
+Install-Module -Name "MSGraphRequest" -AcceptLicense
 ```
 
 ## Module dependencies
