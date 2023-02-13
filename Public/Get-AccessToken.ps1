@@ -51,7 +51,7 @@ function Get-AccessToken {
         [parameter(Mandatory = $true, ParameterSetName = "DeviceCode")]
         [ValidateNotNullOrEmpty()]
         [string]$TenantID,
-        
+
         [parameter(Mandatory = $false, ParameterSetName = "Interactive", HelpMessage = "Application ID (Client ID) for an Azure AD service principal. Uses by default the 'Microsoft Intune PowerShell' service principal Application ID.")]
         [parameter(Mandatory = $true, ParameterSetName = "ClientSecret")]
         [parameter(Mandatory = $true, ParameterSetName = "ClientCertificate")]
@@ -88,7 +88,15 @@ function Get-AccessToken {
         [parameter(Mandatory = $false, ParameterSetName = "Interactive", HelpMessage = "Specify to clear existing access token from the local cache.")]
         [parameter(Mandatory = $false, ParameterSetName = "ClientSecret")]
         [parameter(Mandatory = $false, ParameterSetName = "DeviceCode")]
-        [switch]$ClearCache
+        [switch]$ClearCache,
+
+        [parameter(Mandatory = $false, ParameterSetName = "Interactive", HelpMessage = "Specify OAuth scope(s).")]
+        [parameter(Mandatory = $false, ParameterSetName = "ClientSecret")]
+        [parameter(Mandatory = $false, ParameterSetName = "ClientCertificate")]
+        [parameter(Mandatory = $false, ParameterSetName = "DeviceCode")]
+        [ValidateNotNullOrEmpty()]
+        [string[]]$Scopes
+
     )
     Begin {
         # Determine the correct RedirectUri (also known as Reply URL) to use with MSAL.PS
@@ -179,12 +187,15 @@ function Get-AccessToken {
             if ($PSBoundParameters["ClientCertificate"]) {
                 $AccessTokenArguments.Add("ClientCertificate", $ClientCertificate)
             }
+            if ($PSBoundParameters["Scopes"]) {
+                $AccessTokenArguments.Add("Scopes", $Scopes)
+            }
 
             try {
                 # Attempt to retrieve or refresh an access token
                 $Global:AccessToken = Get-MsalToken @AccessTokenArguments
                 Write-Verbose -Message "Successfully retrieved access token"
-                
+
                 try {
                     # Construct the required authentication header
                     $Global:AuthenticationHeader = New-AuthenticationHeader -AccessToken $Global:AccessToken
