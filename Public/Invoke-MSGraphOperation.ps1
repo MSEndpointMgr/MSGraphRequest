@@ -128,11 +128,11 @@ function Invoke-MSGraphOperation {
             try {
                 # Construct table of default request parameters
                 $RequestParams = @{
-                    "Uri" = $GraphURI
-                    "Headers" = $Global:AuthenticationHeader
-                    "Method" = $PSCmdlet.ParameterSetName
+                    "Uri"         = $GraphURI
+                    "Headers"     = $Global:AuthenticationHeader
+                    "Method"      = $PSCmdlet.ParameterSetName
                     "ErrorAction" = "Stop"
-                    "Verbose" = $false
+                    "Verbose"     = $false
                 }
 
                 switch ($PSCmdlet.ParameterSetName) {
@@ -164,7 +164,7 @@ function Invoke-MSGraphOperation {
                     if ($GraphResponse.value) {
                         $GraphResponseList.AddRange($GraphResponse.value) | Out-Null
                     }
-                    elseif ($GraphResponse.'@odata.count' -eq 0)  {
+                    elseif ($GraphResponse.'@odata.count' -eq 0) {
                         # Do nothing to return empty
                     }
                     else {
@@ -182,7 +182,7 @@ function Invoke-MSGraphOperation {
                 # Construct response error custom object for cross platform support
                 $ResponseBody = [PSCustomObject]@{
                     "ErrorMessage" = [string]::Empty
-                    "ErrorCode" = [string]::Empty
+                    "ErrorCode"    = [string]::Empty
                 }
 
                 # Read response error details differently depending PSVersion
@@ -199,7 +199,18 @@ function Invoke-MSGraphOperation {
                         $ResponseBody.ErrorCode = $ResponseReader.error.code
                     }
                     default {
-                        $ErrorDetails = $ExceptionItem.ErrorDetails.Message | ConvertFrom-Json
+                        try {
+                            # Trap errors where there is no object to convert (eg. Unauthorized 401)
+                            $ErrorDetails = $ExceptionItem.ErrorDetails.Message | ConvertFrom-Json -ErrorAction Stop
+                        }
+                        catch {
+                            $ErrorDetails = [PSCustomObject]@{
+                                Error = [PSCustomObject]@{
+                                    Message = $ExceptionItem.Exception.Message
+                                    Code    = $ExceptionItem.Exception.Response.StatusCode
+                                }
+                            }
+                        }
 
                         # Set response error details
                         $ResponseBody.ErrorMessage = $ErrorDetails.error.message
