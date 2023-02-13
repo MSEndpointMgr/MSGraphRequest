@@ -2,38 +2,38 @@ function Invoke-MSGraphOperation {
     <#
     .SYNOPSIS
         Perform a specific call to Intune Graph API, either as GET, POST, PATCH or DELETE methods.
-        
+
     .DESCRIPTION
         Perform a specific call to Intune Graph API, either as GET, POST, PATCH or DELETE methods.
         This function handles nextLink objects including throttling based on retry-after value from Graph response.
-        
+
     .PARAMETER Get
         Switch parameter used to specify the method operation as 'GET'.
-        
+
     .PARAMETER Post
         Switch parameter used to specify the method operation as 'POST'.
-        
+
     .PARAMETER Patch
         Switch parameter used to specify the method operation as 'PATCH'.
-        
+
     .PARAMETER Put
         Switch parameter used to specify the method operation as 'PUT'.
-        
+
     .PARAMETER Delete
         Switch parameter used to specify the method operation as 'DELETE'.
-        
+
     .PARAMETER Resource
         Specify the full resource path, e.g. deviceManagement/auditEvents.
-        
+
     .PARAMETER Body
         Specify the body construct.
-        
+
     .PARAMETER APIVersion
         Specify to use either 'Beta' or 'v1.0' API version.
-        
+
     .PARAMETER ContentType
         Specify the content type for the graph request.
-        
+
     .NOTES
         Author:      Nickolaj Andersen & Jan Ketil Skanke
         Contact:     @JankeSkanke @NickolajA
@@ -47,7 +47,7 @@ function Invoke-MSGraphOperation {
         1.0.3 - (2021-08-19) Fixed bug to handle single result
         1.0.4 - (2021-09-08) Added cross platform support for error details and fixed an error where StreamReader was used but not supported on newer PS versions.
                              Fixed bug to handle empty results when using GET operation.
-    #>    
+    #>
     param(
         [parameter(Mandatory = $true, ParameterSetName = "GET", HelpMessage = "Switch parameter used to specify the method operation as 'GET'.")]
         [switch]$Get,
@@ -94,7 +94,15 @@ function Invoke-MSGraphOperation {
         [parameter(Mandatory = $false, ParameterSetName = "DELETE")]
         [ValidateNotNullOrEmpty()]
         [ValidateSet("application/json", "image/png")]
-        [string]$ContentType = "application/json"
+        [string]$ContentType = "application/json",
+
+        [parameter(Mandatory = $false, ParameterSetName = "GET", HelpMessage = "Specify a custom uri for the request.")]
+        [parameter(Mandatory = $false, ParameterSetName = "POST")]
+        [parameter(Mandatory = $false, ParameterSetName = "PATCH")]
+        [parameter(Mandatory = $false, ParameterSetName = "PUT")]
+        [parameter(Mandatory = $false, ParameterSetName = "DELETE")]
+        [ValidateNotNullOrEmpty()]
+        [string]$CustomEndpoint
     )
     Begin {
         # Check if authentication header exists
@@ -107,8 +115,13 @@ function Invoke-MSGraphOperation {
         $GraphResponseList = New-Object -TypeName "System.Collections.ArrayList"
 
         # Construct full URI
-        $GraphURI = "https://graph.microsoft.com/$($APIVersion)/$($Resource)"
-        Write-Verbose -Message "$($PSCmdlet.ParameterSetName) $($GraphURI)"        
+        if ($CustomEndpoint) {
+            $GraphURI = "$CustomEndpoint/$($Resource)"
+        }
+        else {
+            $GraphURI = "https://graph.microsoft.com/$($APIVersion)/$($Resource)"
+        }
+        Write-Verbose -Message "$($PSCmdlet.ParameterSetName) $($GraphURI)"
 
         # Call Graph API and get JSON response
         do {
@@ -192,7 +205,7 @@ function Invoke-MSGraphOperation {
                         $ResponseBody.ErrorMessage = $ErrorDetails.error.message
                         $ResponseBody.ErrorCode = $ErrorDetails.error.code
                     }
-                }              
+                }
 
                 switch ($ExceptionItem.Exception.Response.StatusCode) {
                     "TooManyRequests" {
@@ -221,7 +234,7 @@ function Invoke-MSGraphOperation {
                             "GET" {
                                 # Output warning message that the request failed with error message description from response stream
                                 Write-Warning -Message "Graph request failed with status code '$($HttpStatusCodeInteger) ($($ExceptionItem.Exception.Response.StatusCode))'. Error details: $($ResponseBody.ErrorCode) - $($ResponseBody.ErrorMessage)"
-    
+
                                 # Set graph response as handled and stop processing loop
                                 $GraphResponseProcess = $false
                             }
@@ -229,12 +242,12 @@ function Invoke-MSGraphOperation {
                                 # Construct new custom error record
                                 $SystemException = New-Object -TypeName "System.Management.Automation.RuntimeException" -ArgumentList ("{0}: {1}" -f $ResponseBody.ErrorCode, $ResponseBody.ErrorMessage)
                                 $ErrorRecord = New-Object -TypeName "System.Management.Automation.ErrorRecord" -ArgumentList @($SystemException, $ErrorID, [System.Management.Automation.ErrorCategory]::NotImplemented, [string]::Empty)
-    
+
                                 # Throw a terminating custom error record
                                 $PSCmdlet.ThrowTerminatingError($ErrorRecord)
                             }
                         }
-    
+
                         # Set graph response as handled and stop processing loop
                         $GraphResponseProcess = $false
                     }
