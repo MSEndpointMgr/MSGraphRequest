@@ -30,7 +30,7 @@ function New-AuthenticationHeader {
             "Authorization" = $AccessToken.CreateAuthorizationHeader()
             "ExpiresOn" = $AccessToken.ExpiresOn.LocalDateTime
         }
-
+        
         # Handle return value
         return $AuthenticationHeader
     }

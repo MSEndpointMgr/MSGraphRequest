@@ -38,15 +38,15 @@ function Invoke-MSGraphOperation {
         Author:      Nickolaj Andersen & Jan Ketil Skanke
         Contact:     @JankeSkanke @NickolajA
         Created:     2020-10-11
-        Updated:     2021-09-08
+        Updated:     2023-12-06
 
         Version history:
         1.0.0 - (2020-10-11) Function created
         1.0.1 - (2020-11-11) Tested and verified for rate-limit and nextLink
         1.0.2 - (2021-04-12) Adjusted for usage in MSGraphRequest module
         1.0.3 - (2021-08-19) Fixed bug to handle single result
-        1.0.4 - (2021-09-08) Added cross platform support for error details and fixed an error where StreamReader was used but not supported on newer PS versions.
-                             Fixed bug to handle empty results when using GET operation.
+        1.0.4 - (2021-09-08) Added cross platform support for error details and fixed an error where StreamReader was used but not supported on newer PS versions. Fixed bug to handle empty results when using GET operation.
+        1.0.5 - (2023-12-06) Bugfix for POST action without body parameter, bugfix for DELETE action. 
     #>    
     param(
         [parameter(Mandatory = $true, ParameterSetName = "GET", HelpMessage = "Switch parameter used to specify the method operation as 'GET'.")]
@@ -72,7 +72,7 @@ function Invoke-MSGraphOperation {
         [ValidateNotNullOrEmpty()]
         [string]$Resource,
 
-        [parameter(Mandatory = $true, ParameterSetName = "POST", HelpMessage = "Specify the body construct.")]
+        [parameter(Mandatory = $false, ParameterSetName = "POST", HelpMessage = "Specify the body construct.")]
         [parameter(Mandatory = $true, ParameterSetName = "PATCH")]
         [parameter(Mandatory = $true, ParameterSetName = "PUT")]
         [ValidateNotNullOrEmpty()]
@@ -124,7 +124,9 @@ function Invoke-MSGraphOperation {
 
                 switch ($PSCmdlet.ParameterSetName) {
                     "POST" {
-                        $RequestParams.Add("Body", $Body)
+                        if ($Body -ne $null) {
+                            $RequestParams.Add("Body", $Body)
+                        }
                         $RequestParams.Add("ContentType", $ContentType)
                     }
                     "PATCH" {
@@ -133,6 +135,9 @@ function Invoke-MSGraphOperation {
                     }
                     "PUT" {
                         $RequestParams.Add("Body", $Body)
+                        $RequestParams.Add("ContentType", $ContentType)
+                    }
+                    "DELETE" {
                         $RequestParams.Add("ContentType", $ContentType)
                     }
                 }
@@ -176,6 +181,7 @@ function Invoke-MSGraphOperation {
                 switch ($PSVersionTable.PSVersion.Major) {
                     "5" {
                         # Read the response stream
+                        Write-Verbose -Message "Reading response stream PS5"
                         $StreamReader = New-Object -TypeName "System.IO.StreamReader" -ArgumentList @($ExceptionItem.Exception.Response.GetResponseStream())
                         $StreamReader.BaseStream.Position = 0
                         $StreamReader.DiscardBufferedData()

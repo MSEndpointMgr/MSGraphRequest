@@ -10,7 +10,8 @@ function Get-AccessToken {
         Specify the tenant name or ID, e.g. tenant.onmicrosoft.com or <GUID>.
 
     .PARAMETER ClientID
-        Application ID (Client ID) for an Azure AD service principal. Uses by default the 'Microsoft Intune PowerShell' service principal Application ID.
+        Application ID (Client ID) for an Azure AD service principal.Uses Microsoft Graph PowerShell by default.(14d82eec-204b-4c2f-b7e8-296a70dab67e)
+        If you need to use the old legacy Microsoft Intune Powershell, use ClientID d1ddf0e4-d672-4dae-b554-9d5bdfd93547
 
     .PARAMETER ClientSecret
         Specify the client secret for an Azure AD service principal.
@@ -33,15 +34,24 @@ function Get-AccessToken {
     .PARAMETER ClearCache
         Specify to clear existing access token from the local cache.
 
+    .PARAMETER Scopes
+        Specify scopes to the access request, can be used for consent flow in interactive mode. 
+        Type: Array
+        Example: $scopes = @('Device.Read.All','User.Read.All','DeviceManagementManagedDevices.Read.All') 
+
+    .PARAMETER AddConsistencyLevelEventualHeader
+        Switch: Specify to add consistencylevel eventual to the authentication header. 
+
     .NOTES
         Author:      Nickolaj Andersen & Jan Ketil Skanke
         Contact:     @NickolajA @JankeSkanke
         Created:     2021-04-08
-        Updated:     2021-05-05
+        Updated:     2023-12-06
 
         Version history:
         1.0.0 - (2021-04-08) Script created
         1.0.1 - (2021-05-05) Added delegated login using devicecode flow
+        1.0.2 - (2023-12-05) Added scopes parameter, added MS Graph Application as default app. Use -ClientID parameter to specify other app, added AddConsistencyLevelEventualHeader switch
     #>
     [CmdletBinding(DefaultParameterSetName = "Interactive")]
     param(
@@ -57,12 +67,18 @@ function Get-AccessToken {
         [parameter(Mandatory = $true, ParameterSetName = "ClientCertificate")]
         [parameter(Mandatory = $false, ParameterSetName = "DeviceCode")]
         [ValidateNotNullOrEmpty()]
-        [string]$ClientID = "d1ddf0e4-d672-4dae-b554-9d5bdfd93547",
+        [string]$ClientID = "14d82eec-204b-4c2f-b7e8-296a70dab67e",
 
         [parameter(Mandatory = $false, ParameterSetName = "ClientSecret", HelpMessage = "Specify the client secret for an Azure AD service principal.")]
         [ValidateNotNullOrEmpty()]
         [string]$ClientSecret,
 
+        [parameter(Mandatory = $false, HelpMessage = "Add scopes to the access request, can be used for consent flow in interactive mode.")]
+        [array]$Scopes,
+
+        [Parameter(Mandatory=$false, HelpMessage = "Add consistencylevel eventual to the authentication header.")]
+        [switch]$AddConsistencyLevelEventualHeader,
+        
         [parameter(Mandatory = $true, ParameterSetName = "ClientCertificate", HelpMessage = "Specify the client certificate.")]
         [ValidateNotNullOrEmpty()]
         [System.Security.Cryptography.X509Certificates.X509Certificate2]$ClientCertificate,
@@ -94,21 +110,23 @@ function Get-AccessToken {
         # Determine the correct RedirectUri (also known as Reply URL) to use with MSAL.PS
         if ($ClientID -like "d1ddf0e4-d672-4dae-b554-9d5bdfd93547") {
             $RedirectUri = "urn:ietf:wg:oauth:2.0:oob"
-        }
-        else {
+        }        
+        else 
+        {
             if (-not([string]::IsNullOrEmpty($ClientID))) {
                 Write-Verbose -Message "Using custom Azure AD service principal specified with Application ID: $($ClientID)"
 
                 # Adjust RedirectUri parameter input in case non was passed on command line
                 if ([string]::IsNullOrEmpty($RedirectUri)) {
-                    switch -Wildcard ($PSVersionTable["PSVersion"]) {
+                    $RedirectUri = "http://localhost"                    
+                    <#switch -Wildcard ($PSVersionTable["PSVersion"]) {
                         "5.*" {
                             $RedirectUri = "https://login.microsoftonline.com/common/oauth2/nativeclient"
                         }
                         "7.*" {
                             $RedirectUri = "http://localhost"
                         }
-                    }
+                    }#>
                 }
             }
         }
@@ -179,6 +197,9 @@ function Get-AccessToken {
             if ($PSBoundParameters["ClientCertificate"]) {
                 $AccessTokenArguments.Add("ClientCertificate", $ClientCertificate)
             }
+            if ($PSBoundParameters["Scopes"]) {
+                $AccessTokenArguments.Add("Scopes", $Scopes)
+            }
 
             try {
                 # Attempt to retrieve or refresh an access token
@@ -188,6 +209,9 @@ function Get-AccessToken {
                 try {
                     # Construct the required authentication header
                     $Global:AuthenticationHeader = New-AuthenticationHeader -AccessToken $Global:AccessToken
+                    if ($PSBoundParameters["AddConsistencyLevelEventualHeader"]) {
+                        Add-AuthenticationHeaderItem -Name "ConsistencyLevel" -Value "eventual"
+                    }
                     Write-Verbose -Message "Successfully constructed authentication header"
 
                     # Handle return value
