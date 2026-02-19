@@ -38,7 +38,7 @@ function Invoke-MSGraphOperation {
         Author:      Nickolaj Andersen & Jan Ketil Skanke
         Contact:     @JankeSkanke @NickolajA
         Created:     2020-10-11
-        Updated:     2023-12-06
+        Updated:     2026-02-19
 
         Version history:
         1.0.0 - (2020-10-11) Function created
@@ -46,7 +46,8 @@ function Invoke-MSGraphOperation {
         1.0.2 - (2021-04-12) Adjusted for usage in MSGraphRequest module
         1.0.3 - (2021-08-19) Fixed bug to handle single result
         1.0.4 - (2021-09-08) Added cross platform support for error details and fixed an error where StreamReader was used but not supported on newer PS versions. Fixed bug to handle empty results when using GET operation.
-        1.0.5 - (2023-12-06) Bugfix for POST action without body parameter, bugfix for DELETE action. 
+        1.0.5 - (2023-12-06) Bugfix for POST action without body parameter, bugfix for DELETE action.
+        2.0.0 - (2026-02-19) Switched to script-scoped connection state with automatic token refresh. Removed MSAL dependency.
     #>    
     param(
         [parameter(Mandatory = $true, ParameterSetName = "GET", HelpMessage = "Switch parameter used to specify the method operation as 'GET'.")]
@@ -98,8 +99,121 @@ function Invoke-MSGraphOperation {
     )
     Begin {
         # Check if authentication header exists
-        if ($Global:AuthenticationHeader -eq $null) {
-            Write-Warning -Message "Unable to find authentication header, use Get-AccessToken function before running this function"; break
+        if ($null -eq $script:AuthenticationHeader) {
+            Write-Warning -Message "Unable to find authentication header, use Connect-MSGraphRequest before running this function"; break
+        }
+
+        # Automatic token refresh — check if the token is about to expire
+        if ($script:MSGraphConnection -and $script:MSGraphConnection.TokenExpiry) {
+            $utcNow = (Get-Date).ToUniversalTime()
+            $minutesRemaining = ($script:MSGraphConnection.TokenExpiry - $utcNow).TotalMinutes
+            if ($minutesRemaining -le 10) {
+                Write-Verbose -Message "Access token expires in $([math]::Round($minutesRemaining, 1)) minutes — attempting automatic refresh."
+
+                # Preserve any custom header items (e.g. consistencylevel) added via Add-AuthenticationHeaderItem
+                $customHeaderItems = @{}
+                if ($script:AuthenticationHeader) {
+                    foreach ($key in $script:AuthenticationHeader.Keys) {
+                        if ($key -notin @('Authorization', 'Content-Type', 'ExpiresOn')) {
+                            $customHeaderItems[$key] = $script:AuthenticationHeader[$key]
+                        }
+                    }
+                }
+
+                try {
+                    switch ($script:MSGraphConnection.FlowType) {
+                        'Interactive' {
+                            if ($script:MSGraphConnection.RefreshToken) {
+                                $refreshBody = @{
+                                    client_id     = $script:MSGraphConnection.ClientId
+                                    scope         = $script:MSGraphConnection.Scopes
+                                    refresh_token = $script:MSGraphConnection.RefreshToken
+                                    grant_type    = 'refresh_token'
+                                }
+                                $response = Invoke-TokenRequest -TokenEndpoint $script:MSGraphConnection.TokenEndpoint -Body $refreshBody
+                                $script:MSGraphConnection.Token = $response.access_token
+                                $script:MSGraphConnection.TokenExpiry = (Get-Date).AddSeconds($response.expires_in - 60).ToUniversalTime()
+                                if ($response.refresh_token) { $script:MSGraphConnection.RefreshToken = $response.refresh_token }
+                                $script:AuthenticationHeader = New-AuthenticationHeader -AccessToken $response.access_token -ExpiresOn $script:MSGraphConnection.TokenExpiry
+                                Write-Verbose -Message "Token refreshed successfully (interactive refresh_token)."
+                            }
+                            else {
+                                Write-Warning -Message "Access token is expiring and no refresh token is available. Please re-authenticate via Connect-MSGraphRequest."
+                            }
+                        }
+                        'DeviceCode' {
+                            if ($script:MSGraphConnection.RefreshToken) {
+                                $refreshBody = @{
+                                    client_id     = $script:MSGraphConnection.ClientId
+                                    scope         = $script:MSGraphConnection.Scopes
+                                    refresh_token = $script:MSGraphConnection.RefreshToken
+                                    grant_type    = 'refresh_token'
+                                }
+                                $response = Invoke-TokenRequest -TokenEndpoint $script:MSGraphConnection.TokenEndpoint -Body $refreshBody
+                                $script:MSGraphConnection.Token = $response.access_token
+                                $script:MSGraphConnection.TokenExpiry = (Get-Date).AddSeconds($response.expires_in - 60).ToUniversalTime()
+                                if ($response.refresh_token) { $script:MSGraphConnection.RefreshToken = $response.refresh_token }
+                                $script:AuthenticationHeader = New-AuthenticationHeader -AccessToken $response.access_token -ExpiresOn $script:MSGraphConnection.TokenExpiry
+                                Write-Verbose -Message "Token refreshed successfully (device code refresh_token)."
+                            }
+                            else {
+                                Write-Warning -Message "Access token is expiring and no refresh token is available. Please re-authenticate via Connect-MSGraphRequest."
+                            }
+                        }
+                        'ClientSecret' {
+                            $refreshBody = @{
+                                client_id     = $script:MSGraphConnection.ClientId
+                                scope         = $script:MSGraphConnection.Scopes
+                                client_secret = $script:MSGraphConnection.ClientSecret
+                                grant_type    = 'client_credentials'
+                            }
+                            $response = Invoke-TokenRequest -TokenEndpoint $script:MSGraphConnection.TokenEndpoint -Body $refreshBody
+                            $script:MSGraphConnection.Token = $response.access_token
+                            $script:MSGraphConnection.TokenExpiry = (Get-Date).AddSeconds($response.expires_in - 60).ToUniversalTime()
+                            $script:AuthenticationHeader = New-AuthenticationHeader -AccessToken $response.access_token -ExpiresOn $script:MSGraphConnection.TokenExpiry
+                            Write-Verbose -Message "Token refreshed successfully (client credentials)."
+                        }
+                        'ClientCertificate' {
+                            $clientAssertion = New-ClientAssertion -ClientId $script:MSGraphConnection.ClientId -TenantId $script:MSGraphConnection.TenantId -ClientCertificate $script:MSGraphConnection.ClientCertificate
+                            $refreshBody = @{
+                                client_id             = $script:MSGraphConnection.ClientId
+                                scope                 = $script:MSGraphConnection.Scopes
+                                client_assertion_type = 'urn:ietf:params:oauth:client-assertion-type:jwt-bearer'
+                                client_assertion      = $clientAssertion
+                                grant_type            = 'client_credentials'
+                            }
+                            $response = Invoke-TokenRequest -TokenEndpoint $script:MSGraphConnection.TokenEndpoint -Body $refreshBody
+                            $script:MSGraphConnection.Token = $response.access_token
+                            $script:MSGraphConnection.TokenExpiry = (Get-Date).AddSeconds($response.expires_in - 60).ToUniversalTime()
+                            $script:AuthenticationHeader = New-AuthenticationHeader -AccessToken $response.access_token -ExpiresOn $script:MSGraphConnection.TokenExpiry
+                            Write-Verbose -Message "Token refreshed successfully (client certificate)."
+                        }
+                        'ManagedIdentity' {
+                            $miParams = @{}
+                            if ($script:MSGraphConnection.ClientId) { $miParams['ManagedIdentityClientId'] = $script:MSGraphConnection.ClientId }
+                            $response = Invoke-ManagedIdentityAuth @miParams
+                            $script:MSGraphConnection.Token = $response.access_token
+                            $script:MSGraphConnection.TokenExpiry = (Get-Date).AddSeconds($response.expires_in - 60).ToUniversalTime()
+                            $script:AuthenticationHeader = New-AuthenticationHeader -AccessToken $response.access_token -ExpiresOn $script:MSGraphConnection.TokenExpiry
+                            Write-Verbose -Message "Token refreshed successfully (managed identity)."
+                        }
+                        'Token' {
+                            Write-Warning -Message "Access token is about to expire and cannot be auto-refreshed (bring-your-own-token). Please provide a new token via Connect-MSGraphRequest."
+                        }
+                    }
+                }
+                catch {
+                    Write-Warning -Message "Automatic token refresh failed: $($_.Exception.Message). The current token may still be valid for a few more minutes."
+                }
+
+                # Re-apply any custom header items that were present before the refresh
+                if ($customHeaderItems.Count -gt 0 -and $script:AuthenticationHeader) {
+                    foreach ($key in $customHeaderItems.Keys) {
+                        $script:AuthenticationHeader[$key] = $customHeaderItems[$key]
+                    }
+                    Write-Verbose -Message "Restored $($customHeaderItems.Count) custom header item(s) after token refresh."
+                }
+            }
         }
     }
     Process {
@@ -108,15 +222,16 @@ function Invoke-MSGraphOperation {
 
         # Construct full URI
         $GraphURI = "https://graph.microsoft.com/$($APIVersion)/$($Resource)"
-        Write-Verbose -Message "$($PSCmdlet.ParameterSetName) $($GraphURI)"        
+        Write-Verbose -Message "$($PSCmdlet.ParameterSetName) $($GraphURI)"
 
         # Call Graph API and get JSON response
+        $GraphResponseProcess = $true
         do {
             try {
                 # Construct table of default request parameters
                 $RequestParams = @{
                     "Uri" = $GraphURI
-                    "Headers" = $Global:AuthenticationHeader
+                    "Headers" = $script:AuthenticationHeader
                     "Method" = $PSCmdlet.ParameterSetName
                     "ErrorAction" = "Stop"
                     "Verbose" = $false
@@ -192,11 +307,17 @@ function Invoke-MSGraphOperation {
                         $ResponseBody.ErrorCode = $ResponseReader.error.code
                     }
                     default {
-                        $ErrorDetails = $ExceptionItem.ErrorDetails.Message | ConvertFrom-Json
+                        if ($ExceptionItem.ErrorDetails -and $ExceptionItem.ErrorDetails.Message) {
+                            $ErrorDetails = $ExceptionItem.ErrorDetails.Message | ConvertFrom-Json
 
-                        # Set response error details
-                        $ResponseBody.ErrorMessage = $ErrorDetails.error.message
-                        $ResponseBody.ErrorCode = $ErrorDetails.error.code
+                            # Set response error details
+                            $ResponseBody.ErrorMessage = $ErrorDetails.error.message
+                            $ResponseBody.ErrorCode = $ErrorDetails.error.code
+                        }
+                        else {
+                            $ResponseBody.ErrorMessage = $ExceptionItem.Exception.Message
+                            $ResponseBody.ErrorCode = "UnknownError"
+                        }
                     }
                 }              
 
@@ -234,7 +355,7 @@ function Invoke-MSGraphOperation {
                             default {
                                 # Construct new custom error record
                                 $SystemException = New-Object -TypeName "System.Management.Automation.RuntimeException" -ArgumentList ("{0}: {1}" -f $ResponseBody.ErrorCode, $ResponseBody.ErrorMessage)
-                                $ErrorRecord = New-Object -TypeName "System.Management.Automation.ErrorRecord" -ArgumentList @($SystemException, $ErrorID, [System.Management.Automation.ErrorCategory]::NotImplemented, [string]::Empty)
+                                $ErrorRecord = New-Object -TypeName "System.Management.Automation.ErrorRecord" -ArgumentList @($SystemException, $ResponseBody.ErrorCode, [System.Management.Automation.ErrorCategory]::NotImplemented, [string]::Empty)
     
                                 # Throw a terminating custom error record
                                 $PSCmdlet.ThrowTerminatingError($ErrorRecord)

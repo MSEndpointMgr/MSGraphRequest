@@ -1,0 +1,90 @@
+name: Publish to PowerShell Gallery
+
+# Triggers when a GitHub Release is published (create a release with a tag like v2.0.0)
+on:
+  release:
+    types: [published]
+
+jobs:
+  test:
+    name: Run Pester Tests
+    runs-on: windows-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Pester
+        shell: pwsh
+        run: |
+          Install-Module -Name Pester -MinimumVersion 5.0 -Force -Scope CurrentUser
+
+      - name: Run Pester tests
+        shell: pwsh
+        run: |
+          $result = Invoke-Pester -Path './Tests' -Output Detailed -PassThru
+          if ($result.FailedCount -gt 0) {
+            throw "$($result.FailedCount) test(s) failed."
+          }
+
+  validate:
+    name: Validate Module
+    runs-on: windows-latest
+    needs: test
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Validate module manifest
+        shell: pwsh
+        run: |
+          $manifest = Test-ModuleManifest -Path './MSGraphRequest.psd1' -ErrorAction Stop
+          Write-Host "Module: $($manifest.Name) v$($manifest.Version)"
+          Write-Host "Functions: $($manifest.ExportedFunctions.Keys -join ', ')"
+
+      - name: Verify version matches release tag
+        shell: pwsh
+        run: |
+          $manifest = Test-ModuleManifest -Path './MSGraphRequest.psd1'
+          $moduleVersion = $manifest.Version.ToString()
+          $tagVersion = "${{ github.event.release.tag_name }}" -replace '^v', ''
+          
+          if ($moduleVersion -ne $tagVersion) {
+            throw "Version mismatch: manifest=$moduleVersion, tag=$tagVersion. Update ModuleVersion in MSGraphRequest.psd1 to match the release tag."
+          }
+          Write-Host "Version match confirmed: $moduleVersion"
+
+  publish:
+    name: Publish to PSGallery
+    runs-on: windows-latest
+    needs: validate
+    environment:
+      name: PSGallery
+      url: https://www.powershellgallery.com/packages/MSGraphRequest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Publish module
+        shell: pwsh
+        env:
+          NUGET_API_KEY: ${{ secrets.PSGALLERY_API_KEY }}
+        run: |
+          # Stage only the module files (exclude Tests, Internal, .github, etc.)
+          $stagingPath = Join-Path $env:RUNNER_TEMP 'MSGraphRequest'
+          New-Item -ItemType Directory -Path $stagingPath -Force | Out-Null
+          
+          # Copy module files
+          Copy-Item -Path './MSGraphRequest.psd1' -Destination $stagingPath
+          Copy-Item -Path './MSGraphRequest.psm1' -Destination $stagingPath
+          Copy-Item -Path './LICENSE' -Destination $stagingPath
+          Copy-Item -Path './README.md' -Destination $stagingPath
+          Copy-Item -Path './releasenotes.md' -Destination $stagingPath
+          Copy-Item -Path './Private' -Destination $stagingPath -Recurse
+          Copy-Item -Path './Public' -Destination $stagingPath -Recurse
+          
+          Write-Host "Staged module contents:"
+          Get-ChildItem -Path $stagingPath -Recurse | Select-Object FullName
+          
+          # Publish
+          Publish-Module -Path $stagingPath -NuGetApiKey $env:NUGET_API_KEY -Verbose
+          Write-Host "Successfully published to PowerShell Gallery!"

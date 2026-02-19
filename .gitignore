@@ -1,0 +1,17 @@
+# Internal planning and tracking docs (not published)
+Internal/
+
+# Test output
+pester-results.log
+Tests/pester-results.log
+
+# PowerShell module build artifacts
+*.nupkg
+
+# IDE
+.vscode/
+*.code-workspace
+
+# OS
+Thumbs.db
+.DS_Store

@@ -36,11 +36,11 @@ function Add-AuthenticationHeaderItem {
         [string]$Value
     )
     Process {
-        if ($Global:AuthenticationHeader) {
-            $Global:AuthenticationHeader.Add($Name, $Value)
+        if ($script:AuthenticationHeader) {
+            $script:AuthenticationHeader.Add($Name, $Value)
         }
         else {
-            Write-Warning -Message "Unable to locate existing authentication header, use Get-AccessToken before running this function"
+            Write-Warning -Message "Unable to locate existing authentication header, use Connect-MSGraphRequest before running this function"
         }
     }
 }

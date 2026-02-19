@@ -24,11 +24,11 @@ function Remove-AuthenticationHeaderItem {
         [string]$Name
     )
     Process {
-        if ($Global:AuthenticationHeader) {
-            $Global:AuthenticationHeader.Remove($Name)
+        if ($script:AuthenticationHeader) {
+            $script:AuthenticationHeader.Remove($Name)
         }
         else {
-            Write-Warning -Message "Unable to locate existing authentication header, use Get-AccessToken before running this function"
+            Write-Warning -Message "Unable to locate existing authentication header, use Connect-MSGraphRequest before running this function"
         }
     }
 }
