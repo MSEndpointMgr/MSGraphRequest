@@ -108,7 +108,7 @@ function Invoke-MSGraphOperation {
             $utcNow = (Get-Date).ToUniversalTime()
             $minutesRemaining = ($script:MSGraphConnection.TokenExpiry - $utcNow).TotalMinutes
             if ($minutesRemaining -le 10) {
-                Write-Verbose -Message "Access token expires in $([math]::Round($minutesRemaining, 1)) minutes — attempting automatic refresh."
+                Write-Verbose -Message "Access token expires in $([math]::Round($minutesRemaining, 1)) minutes - attempting automatic refresh."
 
                 # Preserve any custom header items (e.g. consistencylevel) added via Add-AuthenticationHeaderItem
                 $customHeaderItems = @{}
