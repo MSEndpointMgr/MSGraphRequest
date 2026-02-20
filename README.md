@@ -1,14 +1,13 @@
 # MSGraphRequest
 
+![PowerShell Gallery Version](https://img.shields.io/powershellgallery/v/MSGraphRequest)
+![PowerShell 5.1+](https://img.shields.io/badge/PowerShell-5.1%2B-blue)
+![License](https://img.shields.io/github/license/MSEndpointMgr/MSGraphRequest)
 ![PowerShell Gallery](https://img.shields.io/powershellgallery/dt/MSGraphRequest)
 
 A PowerShell module that simplifies interacting with Microsoft Graph API. Provides consolidated authentication (six flows) and functions to perform GET, POST, PATCH, PUT, and DELETE operations with automatic paging, throttling, and token refresh.
 
 **v2.0.1** | 100% native REST - zero SDK or MSAL dependencies.
-
-![PowerShell Gallery Version](https://img.shields.io/powershellgallery/v/MSGraphRequest)
-![PowerShell 5.1+](https://img.shields.io/badge/PowerShell-5.1%2B-blue)
-![License](https://img.shields.io/github/license/MSEndpointMgr/MSGraphRequest)
 
 ## Functions
 
