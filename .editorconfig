@@ -1,0 +1,23 @@
+# EditorConfig - https://editorconfig.org
+root = true
+
+# Default settings for all files
+[*]
+charset = utf-8
+end_of_line = lf
+indent_style = space
+indent_size = 4
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+# PowerShell files - ASCII-only to avoid encoding issues with PS 5.1
+[*.{ps1,psm1,psd1}]
+charset = latin1
+
+# Markdown files
+[*.md]
+trim_trailing_whitespace = false
+
+# YAML files (GitHub Actions)
+[*.{yml,yaml}]
+indent_size = 2

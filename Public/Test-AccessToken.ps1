@@ -36,7 +36,7 @@ function Test-AccessToken {
 
         # Determine the current time in UTC
         $UTCDateTime = (Get-Date).ToUniversalTime()
-                    
+
         # Determine the token expiration count as minutes
         $TokenExpireMinutes = ($script:MSGraphConnection.TokenExpiry - $UTCDateTime).TotalMinutes
 

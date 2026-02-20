@@ -28,7 +28,7 @@ function Get-TokenContext {
         $decoded = ConvertFrom-JwtToken -Token $Token
         $payload = $decoded.Payload
 
-        # Determine identity — delegated tokens have 'upn', app tokens have 'app_displayname' or 'azp'
+        # Determine identity - delegated tokens have 'upn', app tokens have 'app_displayname' or 'azp'
         $identity = if ($payload.upn) { $payload.upn }
                     elseif ($payload.unique_name) { $payload.unique_name }
                     elseif ($payload.app_displayname) { $payload.app_displayname }

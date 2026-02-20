@@ -12,7 +12,7 @@ function Invoke-InteractiveAuth {
            and extracts the authorization code.
         5. Exchanges the code + verifier for tokens via Invoke-TokenRequest.
 
-        PKCE is mandatory — mitigates authorization code interception attacks.
+        PKCE is mandatory - mitigates authorization code interception attacks.
         The state parameter is validated to prevent CSRF.
         Token values are never logged.
 
@@ -96,7 +96,7 @@ function Invoke-InteractiveAuth {
             $query = $httpContext.Request.QueryString
 
             # Return a friendly page to the user
-            $html = '<html><body><h3>Authentication complete — you can close this tab.</h3></body></html>'
+            $html = '<html><body><h3>Authentication complete - you can close this tab.</h3></body></html>'
             $buffer = [System.Text.Encoding]::UTF8.GetBytes($html)
             $httpContext.Response.ContentLength64 = $buffer.Length
             $httpContext.Response.OutputStream.Write($buffer, 0, $buffer.Length)
@@ -104,10 +104,10 @@ function Invoke-InteractiveAuth {
 
             # Validate state to prevent CSRF
             if ($query['state'] -ne $state) {
-                throw "State mismatch — possible CSRF attack. Aborting authentication."
+                throw "State mismatch - possible CSRF attack. Aborting authentication."
             }
             if ($query['error']) {
-                throw "Authorization error: $($query['error']) — $($query['error_description'])"
+                throw "Authorization error: $($query['error']) - $($query['error_description'])"
             }
             $authCode = $query['code']
         }

@@ -16,7 +16,7 @@ function Add-AuthenticationHeaderItem {
         Add-AuthenticationHeaderItem -Name consistencylevel -Value eventual
 
     .NOTES
-        Author:      Nickolaj Andersen 
+        Author:      Nickolaj Andersen
         Contributor: Jan Ketil Skanke
         Contact:     @NickolajA / @JankeSkanke
         Created:     2021-05-19

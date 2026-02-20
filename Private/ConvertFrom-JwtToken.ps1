@@ -33,7 +33,7 @@ function ConvertFrom-JwtToken {
 
         $parts = $Token.Split(".")
         if ($parts.Count -lt 2) {
-            throw "Invalid JWT token format — expected at least 2 dot-separated parts."
+            throw "Invalid JWT token format - expected at least 2 dot-separated parts."
         }
 
         # Decode header

@@ -64,7 +64,7 @@ function global:New-TestJwt {
         sub  = 'test-subject-id'
     }
 
-    # Merge — caller overrides win
+    # Merge - caller overrides win
     foreach ($key in $Claims.Keys) {
         $defaultClaims[$key] = $Claims[$key]
     }

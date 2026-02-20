@@ -81,7 +81,7 @@ function Invoke-DeviceCodeAuth {
 
             try {
                 $response = Invoke-RestMethod -Uri $tokenEndpoint -Method Post -Body $tokenBody -ContentType 'application/x-www-form-urlencoded' -ErrorAction Stop
-                # Success — user has authenticated
+                # Success - user has authenticated
                 Write-Verbose -Message "Device code authentication completed successfully."
                 return $response
             }
@@ -104,18 +104,18 @@ function Invoke-DeviceCodeAuth {
                     }
                 }
                 catch {
-                    # Cannot parse — treat as fatal
+                    # Cannot parse - treat as fatal
                 }
 
                 if ($errorBody) {
                     switch ($errorBody.error) {
                         "authorization_pending" {
-                            # User hasn't authenticated yet — keep polling
+                            # User hasn't authenticated yet - keep polling
                             Write-Verbose -Message "Waiting for user authentication..."
                             continue
                         }
                         "slow_down" {
-                            # Server asked us to slow down — increase interval
+                            # Server asked us to slow down - increase interval
                             $interval += 5
                             Write-Verbose -Message "Slowing down polling interval to $interval seconds."
                             continue
@@ -137,6 +137,6 @@ function Invoke-DeviceCodeAuth {
             }
         }
 
-        throw "Device code authentication timed out — the code expired before the user completed sign-in."
+        throw "Device code authentication timed out - the code expired before the user completed sign-in."
     }
 }

@@ -54,7 +54,7 @@ function Connect-MSGraphRequest {
 
     .EXAMPLE
         Connect-MSGraphRequest -TenantId "contoso.onmicrosoft.com" -DeviceCode
-        # Device code flow — displays a code for the user to enter at https://microsoft.com/devicelogin.
+        # Device code flow - displays a code for the user to enter at https://microsoft.com/devicelogin.
 
     .EXAMPLE
         Connect-MSGraphRequest -TenantId "contoso.onmicrosoft.com" -ClientId "00000000-..." -ClientSecret "s3cret!"
@@ -78,7 +78,7 @@ function Connect-MSGraphRequest {
         Created:     2026-02-19
 
         Version history:
-        1.0.0 - (2026-02-19) Script created — native REST, zero SDK dependencies
+        1.0.0 - (2026-02-19) Script created - native REST, zero SDK dependencies
     #>
     [CmdletBinding(DefaultParameterSetName = 'Interactive')]
     param(

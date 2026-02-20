@@ -2,38 +2,38 @@ function Invoke-MSGraphOperation {
     <#
     .SYNOPSIS
         Perform a specific call to Intune Graph API, either as GET, POST, PATCH or DELETE methods.
-        
+
     .DESCRIPTION
         Perform a specific call to Intune Graph API, either as GET, POST, PATCH or DELETE methods.
         This function handles nextLink objects including throttling based on retry-after value from Graph response.
-        
+
     .PARAMETER Get
         Switch parameter used to specify the method operation as 'GET'.
-        
+
     .PARAMETER Post
         Switch parameter used to specify the method operation as 'POST'.
-        
+
     .PARAMETER Patch
         Switch parameter used to specify the method operation as 'PATCH'.
-        
+
     .PARAMETER Put
         Switch parameter used to specify the method operation as 'PUT'.
-        
+
     .PARAMETER Delete
         Switch parameter used to specify the method operation as 'DELETE'.
-        
+
     .PARAMETER Resource
         Specify the full resource path, e.g. deviceManagement/auditEvents.
-        
+
     .PARAMETER Body
         Specify the body construct.
-        
+
     .PARAMETER APIVersion
         Specify to use either 'Beta' or 'v1.0' API version.
-        
+
     .PARAMETER ContentType
         Specify the content type for the graph request.
-        
+
     .NOTES
         Author:      Nickolaj Andersen & Jan Ketil Skanke
         Contact:     @JankeSkanke @NickolajA
@@ -48,7 +48,7 @@ function Invoke-MSGraphOperation {
         1.0.4 - (2021-09-08) Added cross platform support for error details and fixed an error where StreamReader was used but not supported on newer PS versions. Fixed bug to handle empty results when using GET operation.
         1.0.5 - (2023-12-06) Bugfix for POST action without body parameter, bugfix for DELETE action.
         2.0.0 - (2026-02-19) Switched to script-scoped connection state with automatic token refresh. Removed MSAL dependency.
-    #>    
+    #>
     param(
         [parameter(Mandatory = $true, ParameterSetName = "GET", HelpMessage = "Switch parameter used to specify the method operation as 'GET'.")]
         [switch]$Get,
@@ -103,12 +103,12 @@ function Invoke-MSGraphOperation {
             Write-Warning -Message "Unable to find authentication header, use Connect-MSGraphRequest before running this function"; break
         }
 
-        # Automatic token refresh — check if the token is about to expire
+        # Automatic token refresh - check if the token is about to expire
         if ($script:MSGraphConnection -and $script:MSGraphConnection.TokenExpiry) {
             $utcNow = (Get-Date).ToUniversalTime()
             $minutesRemaining = ($script:MSGraphConnection.TokenExpiry - $utcNow).TotalMinutes
             if ($minutesRemaining -le 10) {
-                Write-Verbose -Message "Access token expires in $([math]::Round($minutesRemaining, 1)) minutes — attempting automatic refresh."
+                Write-Verbose -Message "Access token expires in $([math]::Round($minutesRemaining, 1)) minutes - attempting automatic refresh."
 
                 # Preserve any custom header items (e.g. consistencylevel) added via Add-AuthenticationHeaderItem
                 $customHeaderItems = @{}
@@ -319,7 +319,7 @@ function Invoke-MSGraphOperation {
                             $ResponseBody.ErrorCode = "UnknownError"
                         }
                     }
-                }              
+                }
 
                 switch ($ExceptionItem.Exception.Response.StatusCode) {
                     "TooManyRequests" {
@@ -348,7 +348,7 @@ function Invoke-MSGraphOperation {
                             "GET" {
                                 # Output warning message that the request failed with error message description from response stream
                                 Write-Warning -Message "Graph request failed with status code '$($HttpStatusCodeInteger) ($($ExceptionItem.Exception.Response.StatusCode))'. Error details: $($ResponseBody.ErrorCode) - $($ResponseBody.ErrorMessage)"
-    
+
                                 # Set graph response as handled and stop processing loop
                                 $GraphResponseProcess = $false
                             }
@@ -356,12 +356,12 @@ function Invoke-MSGraphOperation {
                                 # Construct new custom error record
                                 $SystemException = New-Object -TypeName "System.Management.Automation.RuntimeException" -ArgumentList ("{0}: {1}" -f $ResponseBody.ErrorCode, $ResponseBody.ErrorMessage)
                                 $ErrorRecord = New-Object -TypeName "System.Management.Automation.ErrorRecord" -ArgumentList @($SystemException, $ResponseBody.ErrorCode, [System.Management.Automation.ErrorCategory]::NotImplemented, [string]::Empty)
-    
+
                                 # Throw a terminating custom error record
                                 $PSCmdlet.ThrowTerminatingError($ErrorRecord)
                             }
                         }
-    
+
                         # Set graph response as handled and stop processing loop
                         $GraphResponseProcess = $false
                     }

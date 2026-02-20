@@ -6,7 +6,7 @@ function Invoke-TokenRequest {
     .DESCRIPTION
         Centralised wrapper around Invoke-RestMethod for all OAuth2 token requests.
         Handles error parsing and returns the raw token response object.
-        Never logs token values — only diagnostic metadata.
+        Never logs token values - only diagnostic metadata.
 
     .PARAMETER TokenEndpoint
         The full URL of the token endpoint, e.g.
@@ -44,7 +44,7 @@ function Invoke-TokenRequest {
         }
         catch [System.Exception] {
             $errorMessage = $PSItem.Exception.Message
-            
+
             # Try to parse error details from the response
             try {
                 $errorDetails = $null

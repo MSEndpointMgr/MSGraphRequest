@@ -22,7 +22,7 @@ function Disconnect-MSGraphRequest {
     [CmdletBinding()]
     param()
     Process {
-        # Clear the connection state — null out all sensitive fields
+        # Clear the connection state - null out all sensitive fields
         if ($script:MSGraphConnection) {
             $script:MSGraphConnection.Token            = $null
             $script:MSGraphConnection.TokenExpiry       = $null

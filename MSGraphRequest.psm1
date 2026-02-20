@@ -28,7 +28,7 @@ process {
         }
     }
 
-    # Backward-compatibility alias — log deprecation warning when used
+    # Backward-compatibility alias - log deprecation warning when used
     Set-Alias -Name "Get-AccessToken" -Value "Connect-MSGraphRequest"
 
     Export-ModuleMember -Function $PublicFunctions.BaseName -Alias *

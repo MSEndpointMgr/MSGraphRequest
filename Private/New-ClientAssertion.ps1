@@ -9,7 +9,7 @@ function New-ClientAssertion {
         jti, nbf, exp), then signs it with the certificate's RSA private key using RS256.
         The resulting JWT is used as the client_assertion parameter in the token request.
 
-        The certificate's private key never leaves the process — only the signed assertion
+        The certificate's private key never leaves the process - only the signed assertion
         string is returned.
 
     .PARAMETER ClientId

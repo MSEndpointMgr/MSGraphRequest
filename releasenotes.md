@@ -1,5 +1,19 @@
 # Release Notes
 
+## 2.0.1 - 2026-02-20
+
+### Bug Fixes
+
+- **Fixed encoding issue breaking scripts on PS 5.1** - Em dash characters (U+2014) in comments and strings caused `Invoke-MSGraphOperation` (and other functions) to fail when installed from PSGallery, because PS 5.1 reads BOM-less UTF-8 files using the system ANSI codepage, mangling multi-byte characters into mojibake.
+- **Replaced all non-ASCII characters** with ASCII equivalents across all 14 affected `.ps1`/`.psm1` files.
+- **Normalized line endings** from CRLF to LF across all source files.
+- **Trimmed trailing whitespace** in 6 files.
+- **Added missing final newlines** in 6 files.
+
+### New Files
+
+- **`.editorconfig`** - Enforces ASCII-only (`latin1`) for PowerShell files, LF line endings, 4-space indentation, trailing whitespace trimming, and final newlines. Prevents future encoding regressions.
+
 ## 2.0.0 - 2026-02-19
 
 ### Breaking Changes

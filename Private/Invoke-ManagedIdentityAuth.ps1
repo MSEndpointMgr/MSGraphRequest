@@ -41,7 +41,7 @@ function Invoke-ManagedIdentityAuth {
         if ($env:IDENTITY_ENDPOINT -and $env:IDENTITY_HEADER) {
             # App Service / Azure Functions environment
             Write-Verbose -Message "Detected App Service / Azure Functions managed identity environment."
-            
+
             $uri = "$($env:IDENTITY_ENDPOINT)?api-version=2019-08-01&resource=$([uri]::EscapeDataString($Resource))"
             if ($ManagedIdentityClientId) {
                 $uri += "&client_id=$([uri]::EscapeDataString($ManagedIdentityClientId))"
@@ -60,7 +60,7 @@ function Invoke-ManagedIdentityAuth {
                 $uri += "&client_id=$([uri]::EscapeDataString($ManagedIdentityClientId))"
             }
 
-            # Metadata header is required — IMDS rejects requests without it to prevent SSRF
+            # Metadata header is required - IMDS rejects requests without it to prevent SSRF
             $headers = @{
                 "Metadata" = "true"
             }
@@ -92,12 +92,12 @@ function Invoke-ManagedIdentityAuth {
         }
         catch [System.Exception] {
             $errorMessage = $PSItem.Exception.Message
-            
+
             # Check if this is likely not a managed identity environment
             if ($errorMessage -match "Unable to connect|No connection|timeout|404") {
                 throw "Managed identity token acquisition failed. Ensure this code is running in an Azure environment with managed identity enabled. Error: $errorMessage"
             }
-            
+
             throw "Managed identity token acquisition failed: $errorMessage"
         }
     }

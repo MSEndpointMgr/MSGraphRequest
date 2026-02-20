@@ -1,7 +1,7 @@
 #Requires -Module Pester
 <#
 .SYNOPSIS
-    Pester tests for Invoke-MSGraphOperation — request execution, paging,
+    Pester tests for Invoke-MSGraphOperation - request execution, paging,
     throttling, auto-refresh, and custom header preservation.
 #>
 
@@ -39,7 +39,7 @@ InModuleScope 'MSGraphRequest' {
                 $script:AuthenticationHeader = $null
 
                 $result = Invoke-MSGraphOperation -Get -Resource 'me' -WarningAction SilentlyContinue
-                # The function breaks early — result should be null/empty
+                # The function breaks early - result should be null/empty
                 $result | Should -BeNullOrEmpty
             }
         }

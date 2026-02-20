@@ -5,7 +5,7 @@ function New-AuthenticationHeader {
 
     .DESCRIPTION
         Builds the HTTP headers required for Microsoft Graph API requests, including
-        the Authorization bearer header and Content-Type. No SDK dependencies — accepts
+        the Authorization bearer header and Content-Type. No SDK dependencies - accepts
         a plain token string.
 
     .PARAMETER AccessToken
@@ -22,7 +22,7 @@ function New-AuthenticationHeader {
 
         Version history:
         1.0.0 - (2021-04-08) Script created
-        2.0.0 - (2026-02-19) Rewritten to accept plain token string — removed MSAL dependency
+        2.0.0 - (2026-02-19) Rewritten to accept plain token string - removed MSAL dependency
     #>
     [CmdletBinding()]
     param(
